@@ -14,11 +14,16 @@ namespace PapyrusDevices {
         logger::info("Saving device {} in slot {}", deviceName, slot);
     }
 
+    void ScanForDevices(RE::StaticFunctionTag*) {
+        OButtplug::BPInterface::GetSingleton()->DeviceLookup();
+    }
+
     bool Bind(VM* a_vm) {
         const auto obj = "OButtplugNative"sv;
 
         BIND(GetConnectedDevices);
         BIND(SetDevice);
+        BIND(ScanForDevices);
 
         return true;
     }

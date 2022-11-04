@@ -21,9 +21,8 @@ configure_file(
         @ONLY)
 
 set(sources
-        src/InterfaceSpec/PluginInterface.cpp
         src/Papyrus/Papyrus.cpp
-        src/WebSocketClient.cpp
+        src/BpIo/WebSocketClient.cpp
         src/BPInterface.cpp
         src/Main.cpp
         

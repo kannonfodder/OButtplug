@@ -1,5 +1,6 @@
+#pragma once
+
 #include <BPInterface.h>
-#include <InterfaceSpec/PluginInterface.h>
 #include <Messaging/IMessages.h>
 #include <Papyrus/Papyrus.h>
 #include <OSA.h>
@@ -11,7 +12,6 @@ using namespace SKSE::log;
 using namespace SKSE::stl;
 
 PluginHandle g_pluginHandle = kInvalidPluginHandle;
-InterfaceMap g_interfaceMap;
 
 namespace {
     void InitializeLogging() {
@@ -38,12 +38,7 @@ namespace {
 
     void UnSpecifiedSenderMessageHandler(SKSE::MessagingInterface::Message* message) {
         log::info("{} Message received", message->type);
-        switch (message->type) {/*
-            case InterfaceExchangeMessage::kMessage_ExchangeInterface: {
-                log::info("Exchange Interface Message Recieved");
-                InterfaceExchangeMessage* exchangeMessage = (InterfaceExchangeMessage*)message->data;
-                exchangeMessage->interfaceMap = &g_interfaceMap;
-            } break;*/
+        switch (message->type) {
             case Messaging::kAnimationChanged: {
                 if (message->dataLen != sizeof(Messaging::AnimationChangedMessage)) {
                     logger::error("Invalid message received from {} - type {}", message->sender, message->type);
@@ -55,14 +50,17 @@ namespace {
     }
     
     void MessageHandler(SKSE::MessagingInterface::Message* a_msg) {
+            logger::info("Received {} from {}", a_msg->type, a_msg->sender);
         switch (a_msg->type) {
             case SKSE::MessagingInterface::kPostLoad: {
                 auto message = SKSE::GetMessagingInterface();
                 if (message) {
+                    logger::info("Registering listener for OSA");
                     message->RegisterListener(nullptr, UnSpecifiedSenderMessageHandler);
                 }
             } break;
             case SKSE::MessagingInterface::kPostPostLoad: {
+                logger::info("Received {} from {}", a_msg->type, a_msg->sender);
                 OSA::InterfaceExchangeMessage msg;
                 auto message = SKSE::GetMessagingInterface();
                 message->Dispatch(OSA::InterfaceExchangeMessage::kExchangeInterface, (void*)&msg, sizeof(OSA::InterfaceExchangeMessage*), "OSA");
@@ -98,7 +96,6 @@ SKSEPluginLoad(const LoadInterface* skse) {
     if (!message->RegisterListener(MessageHandler)) {
         return false;
     }
-    g_interfaceMap.AddInterface("OButtplugInterface", OButtplug::BPInterface::GetSingleton());
 
     Papyrus::Bind();
 

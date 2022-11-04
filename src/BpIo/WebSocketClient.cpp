@@ -1,7 +1,6 @@
 #pragma once
 #include "WebSocketClient.h"
-
-#include <Messages.h>
+#include "BPInterface.h"
 
 void session::startConnection(char const* host, char const* port) {
     // Save these for later
@@ -77,13 +76,13 @@ void session::on_read_bpHandshake(beast::error_code ec, std::size_t bytes_transf
     logger::info("binary: {} text: {}", ws_.got_binary(), ws_.got_text());
     auto msg = json::parse(beast::buffers_to_string(buffer_hs.data()));
     logger::info("{}", msg.dump());
-    auto ping = std::stoi(msg[0]["ServerInfo"]["MaxPingTime"].dump());
+    auto ping = msg[0]["ServerInfo"]["MaxPingTime"].get<int>();
     logger::info("Ping Time : {}", ping);
 
     startReadLoop();
     // startPingLoop(ping);
 
-    auto getDevicesMsg = std::string(R"([{"StartScanning":{"Id":1}}])");
+    // auto getDevicesMsg = std::string(R"([{"StartScanning":{"Id":1}}])");
     // ws_.async_write(net::buffer(getDevicesMsg), beast::bind_front_handler(&session::on_write_devices,
     // shared_from_this()));
 }
@@ -108,8 +107,7 @@ void session::on_read(beast::error_code ec, std::size_t bytes_transferred) {
     logger::info("doing read");
 
     auto bufferData = beast::buffers_to_string(buffer_.data());
-    auto msg = json::parse(bufferData);
-    logger::info("{}", msg.dump());
+    OButtplug::BPInterface::GetSingleton()->WSMessageRecieved(bufferData);
     // Trigger next read
     if (ws_.is_open()) {
         buffer_.consume(buffer_.size());
@@ -131,7 +129,7 @@ void session::send(boost::shared_ptr<std::string const> const& ss) {
     // Post our work to the strand, this ensures
     // that the members of `this` will not be
     // accessed concurrently.
-
+    logger::info("Sending {}", ss.get()->c_str());
     net::post(ws_.get_executor(), beast::bind_front_handler(&session::on_send, shared_from_this(), ss));
 }
 

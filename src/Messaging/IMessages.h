@@ -1,4 +1,5 @@
 #pragma once
+
 struct Action {
 public:
     std::string type;
