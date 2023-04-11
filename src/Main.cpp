@@ -2,8 +2,10 @@
 
 #include <BPInterface.h>
 #include <Messaging/IMessages.h>
+#include <AnimationChangedHandler.h>
 #include <Papyrus/Papyrus.h>
-#include <OSA.h>
+#include <OStim/OStim.h>
+#include <OStim/Interfaces.h>
 #include <stddef.h>
 
 using namespace RE::BSScript;
@@ -44,7 +46,8 @@ namespace {
                     logger::error("Invalid message received from {} - type {}", message->sender, message->type);
                 }
                 auto animChangedMessage = (Messaging::AnimationChangedMessage*)message->data;
-                logger::info("Scene changed {}", animChangedMessage->newAnimation->scene_id);
+                logger::info("Scene changed {}", animChangedMessage->sceneId);
+                OButtplug::AnimationChangedHandler::GetSingleton()->handle(animChangedMessage);
             }break;
         }
     }
@@ -60,23 +63,31 @@ namespace {
                 }
             } break;
             case SKSE::MessagingInterface::kPostPostLoad: {
-                logger::info("Received {} from {}", a_msg->type, a_msg->sender);
-                OSA::InterfaceExchangeMessage msg;
+                OStim::InterfaceExchangeMessage msg;
                 auto message = SKSE::GetMessagingInterface();
-                message->Dispatch(OSA::InterfaceExchangeMessage::kExchangeInterface, (void*)&msg, sizeof(OSA::InterfaceExchangeMessage*), "OSA");
+                message->Dispatch(OStim::InterfaceExchangeMessage::kExchangeInterface, (void*)&msg, sizeof(OStim::InterfaceExchangeMessage*), "OStim");
                 if (!msg.interfaceMap) {
                     logger::critical("Couldn't get interface map!");
                     return;
                 }
 
-                auto osaMessagingRegistry = static_cast<OSA::IMessagingRegistry*>(msg.interfaceMap->QueryInterface("Messaging"));
+                auto osaMessagingRegistry = static_cast<OStim::IMessagingRegistry*>(msg.interfaceMap->QueryInterface("Messaging"));
                 if (!osaMessagingRegistry) {
                     logger::critical("Couldn't get messaging registry");
                     break;
-                } 
+                }                
                 osaMessagingRegistry->RegisterForMessages("OButtplug");
+                auto threadInterface = msg.interfaceMap->QueryInterface("Threads");
+                logger::info("thread version {}",threadInterface->GetVersion());
+                OStim::ThreadInterface::setOStimThreadInterface(static_cast<OStim::IThreadInterface*>(threadInterface));
+                auto graphInterface = msg.interfaceMap->QueryInterface("Graph");
+                OStim::GraphInterface::setOStimGraphInterface(static_cast<OStim::IGraphInterface*>(graphInterface));
+                logger::info("assigned {}", OStim::ThreadInterface::getOStimThreadInterface() != nullptr);
                 OButtplug::BPInterface::GetSingleton()->StartConnection();
             } break;
+            case SKSE::MessagingInterface::kDataLoaded: {
+                OButtplug::BPInterface::GetSingleton()->DeviceLookup();
+            }
         }
     }
 }  // namespace

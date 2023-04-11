@@ -26,7 +26,7 @@ class session : public std::enable_shared_from_this<session> {
     std::string host_;
     std::vector<boost::shared_ptr<std::string const>> queue_;
     bool ready = false;
-
+    
 public:
     // Resolver and socket require an io_context
     explicit session(net::io_context& ioc) : resolver_(net::make_strand(ioc)), ws_(net::make_strand(ioc)) {}
@@ -37,7 +37,7 @@ public:
     void performButtplugHandshake();
 
     void send(boost::shared_ptr<std::string const> const& ss);
-   
+    bool isOpen();
 private:
     void on_resolve(beast::error_code ec, tcp::resolver::results_type results);
     void on_connect(beast::error_code ec, tcp::resolver::results_type::endpoint_type ep);
@@ -49,8 +49,7 @@ private:
     void on_read(beast::error_code ec, std::size_t bytes_transferred);
     void on_close(beast::error_code ec);
 
-    void on_write_devices(beast::error_code ec, std::size_t bytes_transferred);
-
+    void on_write_devices(beast::error_code ec, std::size_t bytes_transferred);    
 
     void startReadLoop();
     

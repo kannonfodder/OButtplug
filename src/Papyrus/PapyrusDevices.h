@@ -10,12 +10,37 @@ namespace PapyrusDevices {
         return intfc->FetchDevices();
     }
 
-    void SetDevice(RE::StaticFunctionTag*, int slot, std::string deviceName) {
+    bool SetDevice(RE::StaticFunctionTag*, int slot, std::string deviceName) {
         logger::info("Saving device {} in slot {}", deviceName, slot);
+        auto intfc = OButtplug::BPInterface::GetSingleton();
+        return intfc->SaveDeviceInSlot(static_cast<OButtplug::Device::Slot>(slot), deviceName);
     }
 
     void ScanForDevices(RE::StaticFunctionTag*) {
         OButtplug::BPInterface::GetSingleton()->DeviceLookup();
+    }
+
+    void TestSelectedDevices(RE::StaticFunctionTag*) {
+        OButtplug::BPInterface::GetSingleton()->TestDevices();
+    }
+
+    std::string GetConnectionStatus(RE::StaticFunctionTag*){
+        if (OButtplug::BPInterface::GetSingleton()->CheckConnection()) {
+            return "Connected";
+        }
+        else {
+            return "Disconnected";
+        }
+    }
+
+    void ConnectToServer(RE::StaticFunctionTag*) {
+        auto intfc = OButtplug::BPInterface::GetSingleton();
+        if (intfc->CheckConnection()) {
+            logger::warn("Attempted to reconnect, but already connected");
+        }
+        else {
+            intfc->StartConnection();
+        }
     }
 
     bool Bind(VM* a_vm) {
@@ -24,6 +49,9 @@ namespace PapyrusDevices {
         BIND(GetConnectedDevices);
         BIND(SetDevice);
         BIND(ScanForDevices);
+        BIND(TestSelectedDevices);
+        BIND(GetConnectionStatus);
+        BIND(ConnectToServer);
 
         return true;
     }

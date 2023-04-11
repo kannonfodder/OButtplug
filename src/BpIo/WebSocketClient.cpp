@@ -8,12 +8,12 @@ void session::startConnection(char const* host, char const* port) {
     logger::info("start domain lookup");
     // Look up the domain name
     resolver_.async_resolve(host, port, beast::bind_front_handler(&session::on_resolve, shared_from_this()));
-    ws_.text(true);
+    ws_.text(true);    
 }
 
 void session::performButtplugHandshake() {
     auto j_arry = json::array();
-    auto msg = json::parse(R"({"RequestServerInfo":{"Id":1,"ClientName":"OButtplug","MessageVersion":1}})");
+    auto msg = json::parse(R"({"RequestServerInfo":{"Id":1,"ClientName":"OButtplug","MessageVersion":2}})");
     j_arry.push_back(msg);
     auto const text = j_arry.dump();
     ws_.async_write(net::buffer(text), beast::bind_front_handler(&session::on_write_bpHandshake, shared_from_this()));
@@ -80,11 +80,6 @@ void session::on_read_bpHandshake(beast::error_code ec, std::size_t bytes_transf
     logger::info("Ping Time : {}", ping);
 
     startReadLoop();
-    // startPingLoop(ping);
-
-    // auto getDevicesMsg = std::string(R"([{"StartScanning":{"Id":1}}])");
-    // ws_.async_write(net::buffer(getDevicesMsg), beast::bind_front_handler(&session::on_write_devices,
-    // shared_from_this()));
 }
 
 void session::on_write_devices(beast::error_code ec, std::size_t bytes_transferred) {
@@ -155,4 +150,8 @@ void session::on_write(beast::error_code ec, std::size_t) {
     if (!queue_.empty())
         ws_.async_write(net::buffer(*queue_.front()),
                         beast::bind_front_handler(&session::on_write, shared_from_this()));
+}
+
+bool session::isOpen() {
+    return ws_.is_open();
 }

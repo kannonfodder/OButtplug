@@ -24,6 +24,8 @@ set(sources
         src/Papyrus/Papyrus.cpp
         src/BpIo/WebSocketClient.cpp
         src/BPInterface.cpp
+        src/AnimationChangedHandler.cpp
+        src/Device.cpp
         src/Main.cpp
         
 
